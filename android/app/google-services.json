@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "115887973200",
+    "project_id": "fine-rock",
+    "storage_bucket": "fine-rock.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:115887973200:android:cecd7646a98219b6e24255",
+        "android_client_info": {
+          "package_name": "com.example.fine_rock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAI1G__WsfD-jFq0qSeFsVxMF0FhkECv9k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
