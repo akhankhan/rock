@@ -1,4 +1,4 @@
-import 'package:fine_rock/presentation/screens/auth/auth_provider.dart';
+import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +19,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthController>(context, listen: false);
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -150,9 +151,6 @@ class _AuthScreenState extends State<AuthScreen> {
                               onPressed: () async {
                                 if (_formKey.currentState!.validate()) {
                                   try {
-                                    final authProvider =
-                                        Provider.of<AuthController>(context,
-                                            listen: false);
                                     if (_isLogin) {
                                       await authProvider.login(
                                         _emailController.text,
@@ -180,7 +178,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 16),
                               ),
-                              child: Text(_isLogin ? 'Login' : 'Sign Up'),
+                              child: authProvider.isLoading
+                                  ? const CircularProgressIndicator()
+                                  : Text(_isLogin ? 'Login' : 'Sign Up'),
                             ),
                           ],
                         ),

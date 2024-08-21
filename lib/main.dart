@@ -1,5 +1,5 @@
 import 'package:fine_rock/firebase_options.dart';
-import 'package:fine_rock/presentation/screens/auth/auth_provider.dart';
+import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_screen.dart';
 import 'package:fine_rock/presentation/screens/home/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,6 +27,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Fine Rock',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
