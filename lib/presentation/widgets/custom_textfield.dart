@@ -13,6 +13,7 @@ class CustomTextField extends StatelessWidget {
   final double borderRadius;
   final TextStyle? textStyle;
   final int maxLength;
+  final int maxLines;
 
   // Constructor with parameters to customize the TextField
   const CustomTextField({
@@ -28,6 +29,7 @@ class CustomTextField extends StatelessWidget {
     this.borderRadius = 10.0,
     this.textStyle,
     this.maxLength = 50,
+    this.maxLines = 1,
   });
 
   @override
@@ -37,6 +39,7 @@ class CustomTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       maxLength: maxLength,
+      maxLines: maxLines,
       style: textStyle ?? const TextStyle(fontSize: 18, color: Colors.black),
       decoration: InputDecoration(
         hintText: hintText,
