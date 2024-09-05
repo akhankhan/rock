@@ -15,7 +15,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  String _selectedRole = 'Buyer';
+  final String _selectedRole = 'Buyer';
 
   @override
   Widget build(BuildContext context) {
@@ -117,35 +117,35 @@ class _AuthScreenState extends State<AuthScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
-                            const Text('Select your role to proceed'),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: RadioListTile(
-                                    title: const Text('Seller'),
-                                    value: 'Seller',
-                                    groupValue: _selectedRole,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedRole = value.toString();
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Expanded(
-                                  child: RadioListTile(
-                                    title: const Text('Buyer'),
-                                    value: 'Buyer',
-                                    groupValue: _selectedRole,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _selectedRole = value.toString();
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
+                            // const Text('Select your role to proceed'),
+                            // Row(
+                            //   children: [
+                            //     Expanded(
+                            //       child: RadioListTile(
+                            //         title: const Text('Seller'),
+                            //         value: 'Seller',
+                            //         groupValue: _selectedRole,
+                            //         onChanged: (value) {
+                            //           setState(() {
+                            //             _selectedRole = value.toString();
+                            //           });
+                            //         },
+                            //       ),
+                            //     ),
+                            //     Expanded(
+                            //       child: RadioListTile(
+                            //         title: const Text('Buyer'),
+                            //         value: 'Buyer',
+                            //         groupValue: _selectedRole,
+                            //         onChanged: (value) {
+                            //           setState(() {
+                            //             _selectedRole = value.toString();
+                            //           });
+                            //         },
+                            //       ),
+                            //     ),
+                            //   ],
+                            // ),
                             const SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: () async {
