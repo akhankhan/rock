@@ -43,11 +43,13 @@ class AddProductScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     CustomTextField(
+                      hint: 'Enter title',
                       labelText: 'Enter title',
                       controller: provider.titleController,
                     ),
                     const SizedBox(height: 10),
                     CustomTextField(
+                      hint: 'Enter Price',
                       labelText: 'Enter Price',
                       controller: provider.priceController,
                       keyboardType: TextInputType.number,
@@ -115,6 +117,7 @@ class AddProductScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 30),
                     CustomButton(
+                      isLoading: provider.isLoading,
                       title: "Submit",
                       onTap: () => provider.addProduct(),
                     ),

@@ -1,17 +1,23 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fine_rock/core/utils/image_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/models/product_model.dart';
+import 'package:path/path.dart' as path;
+
 class AddProductProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool? isLoading = false;
 
   Map<String, List<String>> categorySubcategoryMap = {
     "Facted Grade": ["Precious Stone", "Semi Precious Stone"],
-    "Rough Item": ["Raw Stone", "Uncut Gem"],
-    "Matrix": ["Mineral Matrix", "Gemstone Matrix"]
+    "Rough Item": ["Precious Stone", "Semi Precious Stone"],
+    "Matrix": ["Precious Stone", "Semi Precious Stone"]
   };
 
   String? selectedCategory;
@@ -35,6 +41,16 @@ class AddProductProvider extends ChangeNotifier {
   List<String> get subcategories =>
       categorySubcategoryMap[selectedCategory] ?? [];
 
+  Stream<List<Product>> getProductsStream() {
+    return _firestore
+        .collection('products')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
+    });
+  }
+
   void setCategory(String? value) {
     selectedCategory = value;
     selectedSubCategory = categorySubcategoryMap[value]!.first;
@@ -52,15 +68,38 @@ class AddProductProvider extends ChangeNotifier {
   }
 
   Future<void> addProduct() async {
-    if (image == null) return;
+    isLoading = true;
+    notifyListeners();
+    if (image == null) {
+      print('Error: No image selected');
+      return;
+    }
 
     try {
-      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      // Get the current user
+      User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+
+      // Check if the file exists
+      if (!await image!.exists()) {
+        throw Exception('The selected image file does not exist');
+      }
+
+      // Generate a unique ID for the product
+      String productId = _firestore.collection('products').doc().id;
+
+      // Upload image
+      String fileName = path.basename(image!.path);
       Reference ref = _storage.ref().child('product_images/$fileName');
       await ref.putFile(image!);
       String imageUrl = await ref.getDownloadURL();
 
-      await _firestore.collection('products').add({
+      // Add product to Firestore
+      await _firestore.collection('products').doc(productId).set({
+        'id': productId,
+        'userId': currentUser.uid,
         'title': titleController.text,
         'price': double.parse(priceController.text),
         'description': descController.text,
@@ -72,14 +111,19 @@ class AddProductProvider extends ChangeNotifier {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      _clearForm();
+      clearForm();
       notifyListeners();
     } catch (e) {
       print('Error adding product: $e');
+      // You might want to show an error message to the user here
+      rethrow; // Rethrow the error so it can be caught and handled in the UI
+    } finally {
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  void _clearForm() {
+  void clearForm() {
     titleController.clear();
     priceController.clear();
     descController.clear();

@@ -9,8 +9,8 @@ class HomePrivder extends ChangeNotifier {
 
   Map<String, List<String>> categorySubcategoryMap = {
     "Facted Grade": ["Precious Stone", "Semi Precious Stone"],
-    "Rough Item": ["Raw Stone", "Uncut Gem"],
-    "Matrix": ["Mineral Matrix", "Gemstone Matrix"]
+    "Rough Item": ["Precious Stone", "Semi Precious Stone"],
+    "Matrix": ["Precious Stone", "Semi Precious Stone"]
   };
 
   HomePrivder() {
