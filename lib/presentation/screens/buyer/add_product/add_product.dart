@@ -1,6 +1,7 @@
 import 'package:fine_rock/presentation/screens/buyer/add_product/add_product_provider.dart';
 import 'package:fine_rock/presentation/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:provider/provider.dart';
 
 import '../../../widgets/custom_button.dart';
@@ -56,7 +57,7 @@ class AddProductScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     CustomTextField(
-                      hintText: 'Enter Description',
+                      hint: 'Enter Description',
                       labelText: 'Enter Description',
                       controller: provider.descController,
                       maxLines: 3,
@@ -66,6 +67,7 @@ class AddProductScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: CustomTextField(
+                            hint: 'Size',
                             labelText: 'Size',
                             controller: provider.sizeController,
                           ),
@@ -73,6 +75,7 @@ class AddProductScreen extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: CustomTextField(
+                            hint: 'Color',
                             labelText: 'Color',
                             controller: provider.colorController,
                           ),
@@ -113,6 +116,25 @@ class AddProductScreen extends StatelessWidget {
                       }).toList(),
                       onChanged: (String? newValue) {
                         provider.setSubCategory(newValue);
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    IntlPhoneField(
+                      // controller: widget.phoneNumController,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        border: OutlineInputBorder(
+                          borderSide: const BorderSide(),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: kBluePrimary, width: 2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onChanged: (phone) {
+                        provider.setPhoneNumber(phone.completeNumber);
                       },
                     ),
                     const SizedBox(height: 30),

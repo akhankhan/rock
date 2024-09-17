@@ -18,7 +18,8 @@ class EditProductProvider extends ChangeNotifier {
   late TextEditingController descController;
   late TextEditingController sizeController;
   late TextEditingController colorController;
-  late TextEditingController phoneController;
+
+  String phoneNumber = '';
 
   File? _image;
   final picker = ImagePicker();
@@ -42,8 +43,11 @@ class EditProductProvider extends ChangeNotifier {
     colorController =
         TextEditingController(text: initialProductData['color'] ?? '');
     currentImageUrl = initialProductData['imageUrl'];
-    phoneController =
-        TextEditingController(text: initialProductData['phoneNumber'] ?? '');
+  }
+
+  void setPhoneNumber(String phoneNum) {
+    phoneNumber = phoneNum;
+    notifyListeners();
   }
 
   Future<void> getImage() async {
@@ -83,6 +87,7 @@ class EditProductProvider extends ChangeNotifier {
         'color': colorController.text,
         'imageUrl': imageUrl,
         'updatedAt': FieldValue.serverTimestamp(),
+        'phoneNumber': phoneNumber,
       });
 
       _updateSuccess = true;

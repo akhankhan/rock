@@ -14,6 +14,8 @@ class AddProductProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool? isLoading = false;
 
+  String phoneNumber = '';
+
   Map<String, List<String>> categorySubcategoryMap = {
     "Facted Grade": ["Precious Stone", "Semi Precious Stone"],
     "Rough Item": ["Precious Stone", "Semi Precious Stone"],
@@ -34,6 +36,11 @@ class AddProductProvider extends ChangeNotifier {
   AddProductProvider() {
     selectedCategory = categorySubcategoryMap.keys.first;
     selectedSubCategory = categorySubcategoryMap[selectedCategory]!.first;
+  }
+
+  void setPhoneNumber(String phoneNum) {
+    phoneNumber = phoneNum;
+    notifyListeners();
   }
 
   List<String> get categories => categorySubcategoryMap.keys.toList();
@@ -109,6 +116,7 @@ class AddProductProvider extends ChangeNotifier {
         'subCategory': selectedSubCategory,
         'imageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
+        'phoneNumber': phoneNumber,
       });
 
       clearForm();

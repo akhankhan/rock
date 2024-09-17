@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:provider/provider.dart';
 import 'package:fine_rock/presentation/widgets/custom_textfield.dart';
 import 'package:fine_rock/presentation/widgets/custom_button.dart';
@@ -84,6 +85,25 @@ class EditProductScreen extends StatelessWidget {
                       hint: 'Color',
                       labelText: 'Color',
                       controller: provider.colorController,
+                    ),
+                    const SizedBox(height: 16),
+                    IntlPhoneField(
+                      // controller: widget.phoneNumController,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        border: OutlineInputBorder(
+                          borderSide: const BorderSide(),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: kBluePrimary, width: 2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onChanged: (phone) {
+                        provider.setPhoneNumber(phone.completeNumber);
+                      },
                     ),
                     const SizedBox(height: 32),
                     CustomButton(
