@@ -16,7 +16,7 @@ class AddProductProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final AuthController _authController;
 
-  bool? isLoading = false;
+  bool isLoading = false;
 
   Map<String, List<String>> categorySubcategoryMap = {
     "Facted Grade": ["Precious Stone", "Semi Precious Stone"],
@@ -33,20 +33,16 @@ class AddProductProvider extends ChangeNotifier {
   TextEditingController sizeController = TextEditingController();
   TextEditingController colorController = TextEditingController();
 
-  String get userPhoneNumber => _authController.userModel?.phoneNumber ?? '';
+  List<File> images = [];
+  static const int maxImages = 6;
 
-  File? image;
+  String get userPhoneNumber => _authController.userModel?.phoneNumber ?? '';
 
   AddProductProvider(this._authController) {
     selectedCategory = categorySubcategoryMap.keys.first;
     selectedSubCategory = categorySubcategoryMap[selectedCategory]!.first;
-    log("checkkkkk :${_authController.userModel!.phoneNumber}");
+    log("User phone number: ${_authController.userModel!.phoneNumber}");
   }
-
-  // void setPhoneNumber(String phoneNum) {
-  //   phoneNumber = phoneNum;
-  //   notifyListeners();
-  // }
 
   List<String> get categories => categorySubcategoryMap.keys.toList();
 
@@ -74,44 +70,57 @@ class AddProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void getImageGallery() async {
-    image = await ImagePickerUtil.pickImageFromGallery();
-    notifyListeners();
+  Future<void> addImage() async {
+    if (images.length >= maxImages) {
+      // Show an error or notification that max images reached
+      return;
+    }
+    File? image = await ImagePickerUtil.pickImageFromGallery();
+    if (image != null) {
+      images.add(image);
+      notifyListeners();
+    }
+  }
+
+  void removeImage(int index) {
+    if (index >= 0 && index < images.length) {
+      images.removeAt(index);
+      notifyListeners();
+    }
   }
 
   Future<void> addProduct() async {
     isLoading = true;
     notifyListeners();
-    if (image == null) {
-      print('Error: No image selected');
+    if (images.isEmpty) {
+      print('Error: No images selected');
+      isLoading = false;
+      notifyListeners();
       return;
     }
 
     try {
-      // Get the current user
       User? currentUser = _auth.currentUser;
       if (currentUser == null) {
         throw Exception('No user logged in');
       }
 
-      // Check if the file exists
-      if (!await image!.exists()) {
-        throw Exception('The selected image file does not exist');
-      }
-
-      // Generate a unique ID for the product
       String productId = _firestore.collection('products').doc().id;
+      List<String> imageUrls = [];
 
-      // Upload image
-      String fileName = path.basename(image!.path);
-      Reference ref = _storage.ref().child('product_images/$fileName');
-      await ref.putFile(image!);
-      String imageUrl = await ref.getDownloadURL();
+      // Upload all images
+      for (var image in images) {
+        String fileName = path.basename(image.path);
+        Reference ref = _storage.ref().child('product_images/$fileName');
+        await ref.putFile(image);
+        String imageUrl = await ref.getDownloadURL();
+        imageUrls.add(imageUrl);
+      }
 
       // Add product to Firestore
       await _firestore.collection('products').doc(productId).set({
         'id': productId,
-        'userId': _authController.userModel!.id, //currentUser.uid
+        'userId': _authController.userModel!.id,
         'title': titleController.text,
         'price': double.parse(priceController.text),
         'description': descController.text,
@@ -119,7 +128,7 @@ class AddProductProvider extends ChangeNotifier {
         'color': colorController.text,
         'category': selectedCategory,
         'subCategory': selectedSubCategory,
-        'imageUrl': imageUrl,
+        'imageUrls': imageUrls,
         'createdAt': FieldValue.serverTimestamp(),
         'phoneNumber': _authController.userModel!.phoneNumber,
       });
@@ -142,7 +151,7 @@ class AddProductProvider extends ChangeNotifier {
     descController.clear();
     sizeController.clear();
     colorController.clear();
-    image = null;
+    images.clear();
     selectedCategory = categories.first;
     selectedSubCategory = subcategories.first;
   }
