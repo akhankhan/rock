@@ -18,8 +18,9 @@ class EditProductProvider extends ChangeNotifier {
   late TextEditingController descController;
   late TextEditingController sizeController;
   late TextEditingController colorController;
+  late TextEditingController phoneNumberController;
 
-  String phoneNumber = '';
+  String completePhoneNumber = '';
 
   File? _image;
   final picker = ImagePicker();
@@ -43,10 +44,19 @@ class EditProductProvider extends ChangeNotifier {
     colorController =
         TextEditingController(text: initialProductData['color'] ?? '');
     currentImageUrl = initialProductData['imageUrl'];
+    completePhoneNumber = initialProductData['phoneNumber'] ?? '';
+    phoneNumberController =
+        TextEditingController(text: _extractPhoneNumber(completePhoneNumber));
+  }
+
+  String _extractPhoneNumber(String completeNumber) {
+    // Remove the country code from the complete number
+    // This is a simple implementation and might need to be adjusted based on your specific format
+    return completeNumber.replaceFirst(RegExp(r'^\+\d+\s'), '');
   }
 
   void setPhoneNumber(String phoneNum) {
-    phoneNumber = phoneNum;
+    completePhoneNumber = phoneNum;
     notifyListeners();
   }
 
@@ -87,7 +97,7 @@ class EditProductProvider extends ChangeNotifier {
         'color': colorController.text,
         'imageUrl': imageUrl,
         'updatedAt': FieldValue.serverTimestamp(),
-        'phoneNumber': phoneNumber,
+        'phoneNumber': completePhoneNumber,
       });
 
       _updateSuccess = true;

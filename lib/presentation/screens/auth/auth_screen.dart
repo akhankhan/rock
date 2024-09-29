@@ -1,5 +1,10 @@
+import 'package:country_picker/country_picker.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
+import 'package:fine_rock/presentation/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:provider/provider.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -16,6 +21,8 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
   final String _selectedRole = 'Buyer';
+
+  PhoneNumber number = PhoneNumber(isoCode: 'PK');
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +94,27 @@ class _AuthScreenState extends State<AuthScreen> {
                                 },
                               ),
                               const SizedBox(height: 16),
+                              IntlPhoneField(
+                                initialCountryCode: 'PK',
+                                // controller: widget.phoneNumController,
+                                decoration: InputDecoration(
+                                  labelText: 'Phone Number',
+                                  border: OutlineInputBorder(
+                                    borderSide: const BorderSide(),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  // focusedBorder: OutlineInputBorder(
+                                  //   borderSide: const BorderSide(
+                                  //       color: kBluePrimary, width: 2),
+                                  //   borderRadius: BorderRadius.circular(6),
+                                  // ),
+                                ),
+                                onChanged: (phone) {
+                                  authProvider.phoneNumber =
+                                      phone.completeNumber;
+                                },
+                              ),
+                              const SizedBox(height: 16),
                             ],
                             TextFormField(
                               controller: _emailController,
@@ -101,6 +129,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 return null;
                               },
                             ),
+
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _passwordController,
@@ -116,6 +145,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                 return null;
                               },
                             ),
+
                             const SizedBox(height: 16),
                             // const Text('Select your role to proceed'),
                             // Row(

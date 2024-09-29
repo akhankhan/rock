@@ -24,7 +24,7 @@ class _EditProfileContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<EditProfileProvider>(context);
-    final user = provider.authController.user;
+    final user = provider.authController.userModel;
 
     return Scaffold(
       appBar: AppBar(
@@ -40,8 +40,9 @@ class _EditProfileContent extends StatelessWidget {
                 radius: 50,
                 backgroundImage: provider.image != null
                     ? FileImage(provider.image!)
-                    : (user?.photoURL != null
-                            ? NetworkImage(user!.photoURL!)
+                    : (user?.profileImageUrl != null &&
+                                user!.profileImageUrl!.isNotEmpty
+                            ? NetworkImage(user.profileImageUrl!)
                             : const AssetImage('assets/default_profile.png'))
                         as ImageProvider,
               ),
@@ -56,11 +57,22 @@ class _EditProfileContent extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextFormField(
+              controller: provider.phoneController,
+              decoration: const InputDecoration(
+                labelText: 'Phone Number',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.phone,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
               initialValue: user?.email,
               readOnly: true,
+              enabled: false,
               decoration: const InputDecoration(
                 labelText: 'Email',
                 border: OutlineInputBorder(),
+                filled: true,
               ),
             ),
             const SizedBox(height: 24),

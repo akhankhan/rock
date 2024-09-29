@@ -12,7 +12,7 @@ class SellerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthController>(context, listen: false);
-    final user = authProvider.user;
+    final user = authProvider.userModel;
 
     return Consumer<HomePrivder>(
       builder: (context, homeProvider, child) {
@@ -74,7 +74,7 @@ class SellerScreen extends StatelessWidget {
                   stream: FirebaseFirestore.instance
                       .collection('products')
                       .where('userId',
-                          isEqualTo: user?.uid) // Changed to isEqualTo
+                          isEqualTo: user?.id) // Changed to isEqualTo
                       .where('category', isEqualTo: homeProvider.category)
                       .where('subCategory', isEqualTo: homeProvider.subCategory)
                       .snapshots(),

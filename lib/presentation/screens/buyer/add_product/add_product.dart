@@ -1,7 +1,7 @@
+import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import 'package:fine_rock/presentation/screens/buyer/add_product/add_product_provider.dart';
 import 'package:fine_rock/presentation/widgets/custom_textfield.dart';
 import 'package:flutter/material.dart';
-import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:provider/provider.dart';
 
 import '../../../widgets/custom_button.dart';
@@ -12,7 +12,9 @@ class AddProductScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-        create: (context) => AddProductProvider(),
+        create: (context) => AddProductProvider(
+              Provider.of<AuthController>(context, listen: false),
+            ),
         child: Consumer<AddProductProvider>(
           builder: (context, provider, child) => Scaffold(
             appBar: AppBar(
@@ -118,25 +120,25 @@ class AddProductScreen extends StatelessWidget {
                         provider.setSubCategory(newValue);
                       },
                     ),
-                    const SizedBox(height: 10),
-                    IntlPhoneField(
-                      // controller: widget.phoneNumController,
-                      decoration: InputDecoration(
-                        labelText: 'Phone Number',
-                        border: OutlineInputBorder(
-                          borderSide: const BorderSide(),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: kBluePrimary, width: 2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      onChanged: (phone) {
-                        provider.setPhoneNumber(phone.completeNumber);
-                      },
-                    ),
+                    // const SizedBox(height: 10),
+                    // IntlPhoneField(
+                    //   // controller: widget.phoneNumController,
+                    //   decoration: InputDecoration(
+                    //     labelText: 'Phone Number',
+                    //     border: OutlineInputBorder(
+                    //       borderSide: const BorderSide(),
+                    //       borderRadius: BorderRadius.circular(10),
+                    //     ),
+                    //     focusedBorder: OutlineInputBorder(
+                    //       borderSide:
+                    //           const BorderSide(color: kBluePrimary, width: 2),
+                    //       borderRadius: BorderRadius.circular(10),
+                    //     ),
+                    //   ),
+                    //   onChanged: (phone) {
+                    //     provider.setPhoneNumber(phone.completeNumber);
+                    //   },
+                    // ),
                     const SizedBox(height: 30),
                     CustomButton(
                       isLoading: provider.isLoading,

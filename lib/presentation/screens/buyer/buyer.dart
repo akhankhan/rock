@@ -1,7 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fine_rock/core/utils/whatsapp_launcher.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:fine_rock/presentation/screens/home/home_privder.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BuyerScreen extends StatelessWidget {
   const BuyerScreen({super.key});
@@ -88,12 +91,26 @@ class BuyerScreen extends StatelessWidget {
                           snapshot.data!.docs.map((DocumentSnapshot document) {
                         Map<String, dynamic> data =
                             document.data()! as Map<String, dynamic>;
+
+                        // Safely handle the price field
+                        double price = 0;
+                        if (data['price'] != null) {
+                          if (data['price'] is int) {
+                            price = data['price'].toDouble();
+                          } else if (data['price'] is double) {
+                            price = data['price'];
+                          } else if (data['price'] is String) {
+                            price = double.tryParse(data['price']) ?? 0;
+                          }
+                        }
+
                         return ProductCard(
-                          title: data['title'],
-                          price: data['price'],
-                          imageUrl: data['imageUrl'],
-                          category: data['category'],
-                          subCategory: data['subCategory'],
+                          title: data['title'] ?? 'No Title',
+                          price: price,
+                          imageUrl: data['imageUrl'] ?? '',
+                          category: data['category'] ?? 'No Category',
+                          subCategory: data['subCategory'] ?? 'No Subcategory',
+                          phoneNumber: data['phoneNumber'] ?? '',
                         );
                       }).toList(),
                     );
@@ -114,7 +131,7 @@ class ProductCard extends StatelessWidget {
   final String imageUrl;
   final String category;
   final String subCategory;
-
+  final String phoneNumber;
   const ProductCard({
     super.key,
     required this.title,
@@ -122,6 +139,7 @@ class ProductCard extends StatelessWidget {
     required this.imageUrl,
     required this.category,
     required this.subCategory,
+    required this.phoneNumber,
   });
 
   @override
@@ -143,8 +161,23 @@ class ProductCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium),
                 Text('Category: $category',
                     style: Theme.of(context).textTheme.bodySmall),
-                Text('Subcategory: $subCategory',
-                    style: Theme.of(context).textTheme.bodySmall),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Subcategory: $subCategory',
+                        style: Theme.of(context).textTheme.bodySmall),
+                    GestureDetector(
+                      onTap: () {
+                        WhatsAppLauncher.launch(phoneNumber, context);
+                      },
+                      child: SvgPicture.asset(
+                        "assets/whatsapp.svg",
+                        width: 30,
+                        height: 30,
+                      ),
+                    )
+                  ],
+                ),
               ],
             ),
           ),

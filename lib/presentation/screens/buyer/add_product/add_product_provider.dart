@@ -1,5 +1,7 @@
+import 'dart:developer';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fine_rock/core/utils/image_picker.dart';
@@ -12,9 +14,9 @@ class AddProductProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool? isLoading = false;
+  final AuthController _authController;
 
-  String phoneNumber = '';
+  bool? isLoading = false;
 
   Map<String, List<String>> categorySubcategoryMap = {
     "Facted Grade": ["Precious Stone", "Semi Precious Stone"],
@@ -31,17 +33,20 @@ class AddProductProvider extends ChangeNotifier {
   TextEditingController sizeController = TextEditingController();
   TextEditingController colorController = TextEditingController();
 
+  String get userPhoneNumber => _authController.userModel?.phoneNumber ?? '';
+
   File? image;
 
-  AddProductProvider() {
+  AddProductProvider(this._authController) {
     selectedCategory = categorySubcategoryMap.keys.first;
     selectedSubCategory = categorySubcategoryMap[selectedCategory]!.first;
+    log("checkkkkk :${_authController.userModel!.phoneNumber}");
   }
 
-  void setPhoneNumber(String phoneNum) {
-    phoneNumber = phoneNum;
-    notifyListeners();
-  }
+  // void setPhoneNumber(String phoneNum) {
+  //   phoneNumber = phoneNum;
+  //   notifyListeners();
+  // }
 
   List<String> get categories => categorySubcategoryMap.keys.toList();
 
@@ -106,7 +111,7 @@ class AddProductProvider extends ChangeNotifier {
       // Add product to Firestore
       await _firestore.collection('products').doc(productId).set({
         'id': productId,
-        'userId': currentUser.uid,
+        'userId': _authController.userModel!.id, //currentUser.uid
         'title': titleController.text,
         'price': double.parse(priceController.text),
         'description': descController.text,
@@ -116,7 +121,7 @@ class AddProductProvider extends ChangeNotifier {
         'subCategory': selectedSubCategory,
         'imageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
-        'phoneNumber': phoneNumber,
+        'phoneNumber': _authController.userModel!.phoneNumber,
       });
 
       clearForm();

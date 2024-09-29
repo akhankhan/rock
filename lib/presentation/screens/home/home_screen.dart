@@ -15,7 +15,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthController>(context);
-    final user = authProvider.user;
+    final user = authProvider.userModel;
 
     return ChangeNotifierProvider(
       create: (context) => HomePrivder(),
@@ -85,11 +85,11 @@ class HomeScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               children: [
                 UserAccountsDrawerHeader(
-                  accountName: Text(user?.displayName ?? 'User'),
+                  accountName: Text(user?.fullName ?? 'User'),
                   accountEmail: Text(user?.email ?? ''),
                   currentAccountPicture: CircleAvatar(
-                    backgroundImage: user?.photoURL != null
-                        ? NetworkImage(user!.photoURL!)
+                    backgroundImage: user?.profileImageUrl != null
+                        ? NetworkImage(user!.profileImageUrl!)
                         : const AssetImage('assets/default_profile.png')
                             as ImageProvider,
                   ),

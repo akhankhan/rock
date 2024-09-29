@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:intl_phone_field/phone_number.dart';
 import 'package:provider/provider.dart';
 import 'package:fine_rock/presentation/widgets/custom_textfield.dart';
 import 'package:fine_rock/presentation/widgets/custom_button.dart';
@@ -88,7 +89,7 @@ class EditProductScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     IntlPhoneField(
-                      // controller: widget.phoneNumController,
+                      controller: provider.phoneNumberController,
                       decoration: InputDecoration(
                         labelText: 'Phone Number',
                         border: OutlineInputBorder(
@@ -97,12 +98,17 @@ class EditProductScreen extends StatelessWidget {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderSide:
-                              const BorderSide(color: kBluePrimary, width: 2),
+                              const BorderSide(color: Colors.blue, width: 2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      onChanged: (phone) {
+                      initialCountryCode: '+92',
+                      onChanged: (PhoneNumber phone) {
                         provider.setPhoneNumber(phone.completeNumber);
+                      },
+                      onCountryChanged: (country) {
+                        // Clear the phone number when country changes
+                        provider.phoneNumberController.clear();
                       },
                     ),
                     const SizedBox(height: 32),

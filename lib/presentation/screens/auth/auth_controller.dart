@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fine_rock/core/models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
@@ -6,16 +7,18 @@ class AuthController with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool isLoading = false;
-  User? _user;
-  //String? _role;
+  UserModel? _userModel;
+  String phoneNumber = '';
 
-  User? get user => _user;
-  //String? get role => _role;
+  UserModel? get userModel => _userModel;
 
   AuthController() {
     _auth.authStateChanges().listen((User? user) {
-      _user = user;
-      //   _loadRole();
+      if (user != null) {
+        _loadUserData(user.uid);
+      } else {
+        _userModel = null;
+      }
       notifyListeners();
     });
   }
@@ -26,26 +29,23 @@ class AuthController with ChangeNotifier {
     User? freshUser = _auth.currentUser;
     if (freshUser != null) {
       await freshUser.reload();
-      _user = _auth.currentUser;
-      // await _loadRole();
-      notifyListeners();
+      await _loadUserData(freshUser.uid);
     }
   }
 
-  // Future<void> _loadRole() async {
-  //   if (_user != null) {
-  //     try {
-  //       DocumentSnapshot userDoc =
-  //           await _firestore.collection('users').doc(_user!.uid).get();
-  //       if (userDoc.exists) {
-  //         _role = userDoc.get('role');
-  //         notifyListeners();
-  //       }
-  //     } catch (e) {
-  //       print("Error loading role: $e");
-  //     }
-  //   }
-  // }
+  Future<void> _loadUserData(String uid) async {
+    try {
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
+        _userModel =
+            UserModel.fromFirestore(userDoc.data() as Map<String, dynamic>);
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Error loading user data: $e");
+    }
+  }
 
   Future<void> signUp(
       String email, String password, String fullName, String role) async {
@@ -58,21 +58,19 @@ class AuthController with ChangeNotifier {
         email: email,
         password: password,
       );
-      _user = userCredential.user;
 
-      // Update display name
-      await _user?.updateDisplayName(fullName);
+      UserModel newUser = UserModel(
+        id: userCredential.user!.uid,
+        fullName: fullName,
+        email: email,
+        role: role,
+        phoneNumber: phoneNumber,
+        createdAt: DateTime.now(),
+      );
 
-      // Store user data in Firestore
-      await _firestore.collection('users').doc(_user!.uid).set({
-        'id': _user!.uid,
-        'fullName': fullName,
-        'email': email,
-        'role': role,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      await _firestore.collection('users').doc(newUser.id).set(newUser.toMap());
 
-      // _role = role;
+      _userModel = newUser;
       isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -92,8 +90,8 @@ class AuthController with ChangeNotifier {
         email: email,
         password: password,
       );
-      _user = userCredential.user;
-      //  await _loadRole();
+
+      await _loadUserData(userCredential.user!.uid);
 
       isLoading = false;
       notifyListeners();
@@ -108,8 +106,7 @@ class AuthController with ChangeNotifier {
   Future<void> logout() async {
     try {
       await _auth.signOut();
-      _user = null;
-      //  _role = null;
+      _userModel = null;
       notifyListeners();
     } catch (e) {
       print("Error during logout: $e");
@@ -117,10 +114,12 @@ class AuthController with ChangeNotifier {
     }
   }
 
-  Future<void> updateUserData(String uid, Map<String, dynamic> data) async {
+  Future<void> updateUserData(Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('users').doc(uid).update(data);
-      await refreshUser();
+      if (_userModel != null) {
+        await _firestore.collection('users').doc(_userModel!.id).update(data);
+        await _loadUserData(_userModel!.id);
+      }
     } catch (e) {
       print("Error updating user data: $e");
       rethrow;
