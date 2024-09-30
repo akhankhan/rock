@@ -1,3 +1,4 @@
+import 'package:fine_rock/presentation/favorite/favorite_screen.dart';
 import 'package:fine_rock/presentation/screens/buyer/add_product/add_product.dart';
 import 'package:fine_rock/presentation/screens/buyer/buyer.dart';
 import 'package:fine_rock/presentation/screens/home/home_privder.dart';
@@ -106,6 +107,16 @@ class HomeScreen extends StatelessWidget {
                       MaterialPageRoute(
                           builder: (context) => const EditProfileScreen()),
                     );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.favorite),
+                  title: const Text('Favorite'),
+                  onTap: () {
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const FavoritesScreen()));
                   },
                 ),
                 ListTile(
