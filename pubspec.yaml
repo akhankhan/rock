@@ -48,6 +48,9 @@ dependencies:
   intl_phone_number_input: ^0.7.4
   url_launcher: ^6.1.10
   carousel_slider: ^4.2.1
+  animate_do: ^3.3.4
+  glassmorphism: ^3.0.0
+  lottie: ^3.1.2
 
 dev_dependencies:
   flutter_test:

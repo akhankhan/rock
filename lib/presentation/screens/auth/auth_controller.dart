@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fine_rock/core/models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 class AuthController with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -43,17 +44,14 @@ class AuthController with ChangeNotifier {
         notifyListeners();
       }
     } catch (e) {
-      print("Error loading user data: $e");
+      _handleError('Error loading user data', e);
     }
   }
 
   Future<void> signUp(
       String email, String password, String fullName, String role) async {
     try {
-      isLoading = true;
-      notifyListeners();
-
-      UserCredential userCredential =
+      final UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -69,37 +67,29 @@ class AuthController with ChangeNotifier {
       );
 
       await _firestore.collection('users').doc(newUser.id).set(newUser.toMap());
-
       _userModel = newUser;
-      isLoading = false;
       notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      throw _handleAuthException(e);
     } catch (e) {
-      isLoading = false;
-      notifyListeners();
-      print("Error during signup: $e");
-      rethrow;
+      throw Exception('An unexpected error occurred. Please try again.');
     }
   }
 
   Future<void> login(String email, String password) async {
     try {
-      isLoading = true;
-      notifyListeners();
-
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      final UserCredential userCredential =
+          await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-
       await _loadUserData(userCredential.user!.uid);
-
-      isLoading = false;
-      notifyListeners();
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}'); // Debug log
+      throw _handleAuthException(e);
     } catch (e) {
-      isLoading = false;
-      notifyListeners();
-      print("Error during login: $e");
-      rethrow;
+      print('Unexpected error: $e'); // Debug log
+      throw Exception('An unexpected error occurred. Please try again.');
     }
   }
 
@@ -109,8 +99,7 @@ class AuthController with ChangeNotifier {
       _userModel = null;
       notifyListeners();
     } catch (e) {
-      print("Error during logout: $e");
-      rethrow;
+      _handleError('Error during logout', e);
     }
   }
 
@@ -121,8 +110,58 @@ class AuthController with ChangeNotifier {
         await _loadUserData(_userModel!.id);
       }
     } catch (e) {
-      print("Error updating user data: $e");
-      rethrow;
+      _handleError('Error updating user data', e);
     }
   }
+
+  Future<void> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+    } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}'); // Debug log
+      throw _handleAuthException(e);
+    } catch (e) {
+      print('Unexpected error: $e'); // Debug log
+      throw Exception('An unexpected error occurred. Please try again.');
+    }
+  }
+
+  String _handleAuthException(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return 'No user found with this email.';
+      case 'wrong-password':
+        return 'Wrong password provided for this user.';
+      case 'invalid-email':
+        return 'The email address is not valid.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      case 'email-already-in-use':
+        return 'An account already exists for this email.';
+      case 'operation-not-allowed':
+        return 'Email/password accounts are not enabled.';
+      case 'weak-password':
+        return 'The password provided is too weak.';
+      case 'invalid-credential':
+        return 'The email or password is incorrect.';
+      default:
+        return 'Authentication error: ${e.message}';
+    }
+  }
+
+  void _handleError(String message, dynamic error) {
+    isLoading = false;
+    notifyListeners();
+    print("$message: $error");
+    throw CustomAuthException(
+        'An unexpected error occurred. Please try again.');
+  }
+}
+
+class CustomAuthException implements Exception {
+  final String message;
+  CustomAuthException(this.message);
+
+  @override
+  String toString() => message;
 }
