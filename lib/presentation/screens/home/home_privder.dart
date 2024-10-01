@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 enum Role { buyer, seller }
 
 class HomePrivder extends ChangeNotifier {
-  Role? selectedRole = Role.seller;
+  Role? selectedRole = Role.buyer;
   String? category;
   String? subCategory;
 
