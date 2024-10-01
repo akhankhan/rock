@@ -164,7 +164,10 @@ class HomeScreen extends StatelessWidget {
                       builder: (context) => const AddProductScreen()));
             },
             backgroundColor: Theme.of(context).primaryColor,
-            child: const Icon(Icons.add),
+            child: const Icon(
+              Icons.add,
+              color: Colors.white,
+            ),
           )
         : null;
   }

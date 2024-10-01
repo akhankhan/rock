@@ -51,6 +51,7 @@ dependencies:
   animate_do: ^3.3.4
   glassmorphism: ^3.0.0
   lottie: ^3.1.2
+  animated_text_kit: ^4.2.2
 
 dev_dependencies:
   flutter_test:

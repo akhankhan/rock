@@ -22,15 +22,11 @@ class EditProductProvider extends ChangeNotifier {
 
   String completePhoneNumber = '';
 
-  File? _image;
+  List<String> currentImageUrls = [];
+  List<File> newImages = [];
   final picker = ImagePicker();
-  String? currentImageUrl;
-  bool? _isLoading = false;
-  bool _updateSuccess = false;
-
-  File? get image => _image;
-  bool get updateSuccess => _updateSuccess;
-  bool? get isLoading => _isLoading;
+  bool isLoading = false;
+  bool updateSuccess = false;
 
   void _initializeControllers() {
     titleController =
@@ -43,15 +39,13 @@ class EditProductProvider extends ChangeNotifier {
         TextEditingController(text: initialProductData['size'] ?? '');
     colorController =
         TextEditingController(text: initialProductData['color'] ?? '');
-    currentImageUrl = initialProductData['imageUrl'];
+    currentImageUrls = List<String>.from(initialProductData['imageUrls'] ?? []);
     completePhoneNumber = initialProductData['phoneNumber'] ?? '';
     phoneNumberController =
         TextEditingController(text: _extractPhoneNumber(completePhoneNumber));
   }
 
   String _extractPhoneNumber(String completeNumber) {
-    // Remove the country code from the complete number
-    // This is a simple implementation and might need to be adjusted based on your specific format
     return completeNumber.replaceFirst(RegExp(r'^\+\d+\s'), '');
   }
 
@@ -60,30 +54,40 @@ class EditProductProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> getImage() async {
+  Future<void> addImage() async {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
     if (pickedFile != null) {
-      _image = File(pickedFile.path);
+      newImages.add(File(pickedFile.path));
       notifyListeners();
     }
   }
 
+  void removeCurrentImage(int index) {
+    currentImageUrls.removeAt(index);
+    notifyListeners();
+  }
+
+  void removeNewImage(int index) {
+    newImages.removeAt(index);
+    notifyListeners();
+  }
+
   Future<void> updateProduct() async {
-    _isLoading = true;
-    _updateSuccess = false;
+    isLoading = true;
+    updateSuccess = false;
     notifyListeners();
 
     try {
-      String imageUrl = currentImageUrl ?? '';
+      List<String> updatedImageUrls = [...currentImageUrls];
 
-      if (_image != null) {
-        // Upload new image
+      // Upload new images
+      for (File image in newImages) {
         String fileName = DateTime.now().millisecondsSinceEpoch.toString();
         Reference ref =
             FirebaseStorage.instance.ref().child('product_images/$fileName');
-        await ref.putFile(_image!);
-        imageUrl = await ref.getDownloadURL();
+        await ref.putFile(image);
+        String imageUrl = await ref.getDownloadURL();
+        updatedImageUrls.add(imageUrl);
       }
 
       await FirebaseFirestore.instance
@@ -95,17 +99,17 @@ class EditProductProvider extends ChangeNotifier {
         'description': descController.text,
         'size': sizeController.text,
         'color': colorController.text,
-        'imageUrl': imageUrl,
+        'imageUrls': updatedImageUrls,
         'updatedAt': FieldValue.serverTimestamp(),
         'phoneNumber': completePhoneNumber,
       });
 
-      _updateSuccess = true;
+      updateSuccess = true;
     } catch (e) {
-      _updateSuccess = false;
+      updateSuccess = false;
       rethrow;
     } finally {
-      _isLoading = false;
+      isLoading = false;
       notifyListeners();
     }
   }
@@ -117,6 +121,7 @@ class EditProductProvider extends ChangeNotifier {
     descController.dispose();
     sizeController.dispose();
     colorController.dispose();
+    phoneNumberController.dispose();
     super.dispose();
   }
 }

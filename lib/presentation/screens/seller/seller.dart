@@ -279,35 +279,37 @@ class SellerProductCard extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Stack(
               children: [
-                ClipRRect(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(15.r)),
-                  child: imageUrls.isNotEmpty
-                      ? CarouselSlider(
-                          options: CarouselOptions(
-                            aspectRatio: 1,
-                            viewportFraction: 1,
-                            autoPlay: false,
-                            autoPlayInterval: const Duration(seconds: 3),
+                Center(
+                  child: ClipRRect(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(15.r)),
+                    child: imageUrls.isNotEmpty
+                        ? CarouselSlider(
+                            options: CarouselOptions(
+                              aspectRatio: 1,
+                              viewportFraction: 1,
+                              autoPlay: false,
+                              autoPlayInterval: const Duration(seconds: 3),
+                            ),
+                            items: imageUrls.map((url) {
+                              return Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              );
+                            }).toList(),
+                          )
+                        : Image.network(
+                            'https://placeholder.com/300',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
                           ),
-                          items: imageUrls.map((url) {
-                            return Image.network(
-                              url,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                            );
-                          }).toList(),
-                        )
-                      : Image.network(
-                          'https://placeholder.com/300',
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                        ),
+                  ),
                 ),
                 Positioned(
                   top: 8.h,
@@ -360,13 +362,42 @@ class SellerProductCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.edit, size: 20.w),
-                      onPressed: onEdit,
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(Icons.edit, size: 12.w),
+                        label: Text('Edit', style: TextStyle(fontSize: 9.sp)),
+                        onPressed: onEdit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[200],
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 0.w, vertical: 8.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+                      ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.delete, size: 20.w),
-                      onPressed: onDelete,
+                    5.horizontalSpace,
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        icon: Icon(
+                          Icons.delete,
+                          size: 12.w,
+                          color: Colors.white,
+                        ),
+                        label: Text('Delete',
+                            style:
+                                TextStyle(fontSize: 9.sp, color: Colors.white)),
+                        onPressed: onDelete,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 0.w, vertical: 8.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.r),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),

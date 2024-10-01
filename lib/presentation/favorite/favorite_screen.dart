@@ -3,6 +3,7 @@ import 'package:fine_rock/core/services/product_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fine_rock/presentation/screens/buyer/buyer_product_detail_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -53,7 +54,6 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       setState(() {
         _isLoading = false;
       });
-      // Show an error message to the user
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Failed to load favorites. Please try again.')),
@@ -61,66 +61,161 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
+  void _removeFromFavorites(String productId) {
+    setState(() {
+      _favoriteProducts.removeWhere((product) => product.id == productId);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorites'),
+        title: Text('Favorites', style: TextStyle(fontSize: 20.sp)),
+        elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _favoriteProducts.isEmpty
-              ? const Center(child: Text('No favorite products'))
-              : ListView.builder(
-                  itemCount: _favoriteProducts.length,
-                  itemBuilder: (context, index) {
-                    final product = _favoriteProducts[index];
-                    return ListTile(
-                      leading: _buildProductImage(product),
-                      title: Text(product.title),
-                      subtitle: Text('\$${product.price.toStringAsFixed(2)}'),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProductDetailScreen(
-                              id: product.id,
-                              title: product.title,
-                              price: product.price,
-                              imageUrls: product.imageUrls,
-                              category: product.category,
-                              subCategory: product.subCategory,
-                              phoneNumber: product.phoneNumber,
-                              description: product.description,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+      body: RefreshIndicator(
+        onRefresh: _loadFavorites,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _favoriteProducts.isEmpty
+                ? _buildEmptyState()
+                : _buildFavoriteGrid(),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.favorite_border, size: 80.w, color: Colors.grey),
+          SizedBox(height: 16.h),
+          Text(
+            'No favorite products yet',
+            style: TextStyle(fontSize: 18.sp, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 8.h),
+          Text(
+            'Add some products to your favorites!',
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoriteGrid() {
+    return GridView.builder(
+      padding: EdgeInsets.all(16.w),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.75,
+        crossAxisSpacing: 16.w,
+        mainAxisSpacing: 16.w,
+      ),
+      itemCount: _favoriteProducts.length,
+      itemBuilder: (context, index) {
+        final product = _favoriteProducts[index];
+        return _buildProductCard(product);
+      },
+    );
+  }
+
+  Widget _buildProductCard(Product product) {
+    return GestureDetector(
+      onTap: () => _navigateToProductDetail(product),
+      child: Card(
+        elevation: 4,
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
+                child: _buildProductImage(product),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.all(8.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.title,
+                    style:
+                        TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontSize: 14.sp, color: Theme.of(context).primaryColor),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    '${product.category} - ${product.subCategory}',
+                    style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildProductImage(Product product) {
-    if (product.imageUrls.isNotEmpty) {
-      return Image.network(
-        product.imageUrls.first,
-        width: 50,
-        height: 50,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          print('Error loading image: $error');
-          return const Icon(Icons.error);
-        },
-      );
-    } else {
-      return Container(
-        width: 50,
-        height: 50,
-        color: Colors.grey,
-        child: const Icon(Icons.image_not_supported, color: Colors.white),
-      );
-    }
+    return product.imageUrls.isNotEmpty
+        ? Image.network(
+            product.imageUrls.first,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading image: $error');
+              return _buildPlaceholderImage();
+            },
+          )
+        : _buildPlaceholderImage();
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      color: Colors.grey[300],
+      child:
+          Icon(Icons.image_not_supported, color: Colors.grey[600], size: 40.w),
+    );
+  }
+
+  void _navigateToProductDetail(Product product) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ProductDetailScreen(
+          id: product.id,
+          title: product.title,
+          price: product.price,
+          imageUrls: product.imageUrls,
+          category: product.category,
+          subCategory: product.subCategory,
+          phoneNumber: product.phoneNumber,
+          description: product.description,
+          onFavoriteChanged: (isFavorite) {
+            if (!isFavorite) {
+              _removeFromFavorites(product.id);
+            }
+          },
+        ),
+      ),
+    );
   }
 }

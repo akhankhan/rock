@@ -13,6 +13,7 @@ class ProductDetailScreen extends StatefulWidget {
   final String subCategory;
   final String phoneNumber;
   final String description;
+  final Function(bool)? onFavoriteChanged;
 
   const ProductDetailScreen({
     super.key,
@@ -24,6 +25,7 @@ class ProductDetailScreen extends StatefulWidget {
     required this.subCategory,
     required this.phoneNumber,
     this.description = '',
+    this.onFavoriteChanged,
   });
 
   @override
@@ -39,10 +41,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void initState() {
     super.initState();
     _carouselController = CarouselController();
-    _loadFavoriteStatus();
+    _checkFavoriteStatus();
   }
 
-  Future<void> _loadFavoriteStatus() async {
+  Future<void> _checkFavoriteStatus_loadFavoriteStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isFavorite = prefs.getBool('favorite_${widget.id}') ?? false;
+    });
+  }
+
+  Future<void> _checkFavoriteStatus() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _isFavorite = prefs.getBool('favorite_${widget.id}') ?? false;
@@ -55,13 +64,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       _isFavorite = !_isFavorite;
     });
     await prefs.setBool('favorite_${widget.id}', _isFavorite);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content:
-            Text(_isFavorite ? 'Added to favorites' : 'Removed from favorites'),
-        duration: const Duration(seconds: 1),
-      ),
-    );
+    widget.onFavoriteChanged?.call(_isFavorite);
   }
 
   @override
