@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fine_rock/core/utils/whatsapp_launcher.dart';
 import 'package:fine_rock/presentation/screens/buyer/buyer_product_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:fine_rock/presentation/screens/home/home_privder.dart';
@@ -16,174 +17,193 @@ class BuyerScreen extends StatefulWidget {
 
 class _BuyerScreenState extends State<BuyerScreen> {
   String _searchQuery = '';
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      // Load more products when reaching the bottom
+      // Implement pagination logic here
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<HomePrivder>(
       builder: (context, homeProvider, child) {
-        return Flexible(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search products...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[200],
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.toLowerCase();
-                    });
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: homeProvider.category,
-                        items: homeProvider.categorySubcategoryMap.keys
-                            .map((String category) {
-                          return DropdownMenuItem<String>(
-                            value: category,
-                            child: Text(category),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          homeProvider.setCategory(newValue);
-                        },
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[200],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        value: homeProvider.subCategory,
-                        items: homeProvider
-                                .categorySubcategoryMap[homeProvider.category]
-                                ?.map((String subcategory) {
-                              return DropdownMenuItem<String>(
-                                value: subcategory,
-                                child: Text(subcategory),
-                              );
-                            }).toList() ??
-                            [],
-                        onChanged: (String? newValue) {
-                          homeProvider.setSubCategory(newValue);
-                        },
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[200],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    // Implement refresh logic
-                  },
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('products')
-                        .where('category', isEqualTo: homeProvider.category)
-                        .where('subCategory',
-                            isEqualTo: homeProvider.subCategory)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return const Center(
-                            child: Text('Something went wrong'));
-                      }
-
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      if (snapshot.data!.docs.isEmpty) {
-                        return const Center(child: Text('No products found'));
-                      }
-
-                      List<DocumentSnapshot> filteredDocs = snapshot.data!.docs
-                          .where((doc) => doc['title']
-                              .toString()
-                              .toLowerCase()
-                              .contains(_searchQuery))
-                          .toList();
-
-                      return GridView.builder(
-                        padding: const EdgeInsets.all(16.0),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: filteredDocs.length,
-                        itemBuilder: (context, index) {
-                          DocumentSnapshot document = filteredDocs[index];
-                          Map<String, dynamic> data =
-                              document.data()! as Map<String, dynamic>;
-
-                          double price = 0;
-                          if (data['price'] != null) {
-                            if (data['price'] is num) {
-                              price = (data['price'] as num).toDouble();
-                            } else if (data['price'] is String) {
-                              price = double.tryParse(data['price']) ?? 0;
-                            }
-                          }
-
-                          List<String> imageUrls = [];
-                          if (data['imageUrls'] != null &&
-                              data['imageUrls'] is List) {
-                            imageUrls = List<String>.from(data['imageUrls']);
-                          } else if (data['imageUrl'] != null) {
-                            imageUrls = [data['imageUrl']];
-                          }
-
-                          return ProductCard(
-                            id: data['id'] ?? '',
-                            title: data['title'] ?? 'No Title',
-                            price: price,
-                            imageUrls: imageUrls,
-                            category: data['category'] ?? 'No Category',
-                            subCategory:
-                                data['subCategory'] ?? 'No Subcategory',
-                            phoneNumber: data['phoneNumber'] ?? '',
-                            description: data['description'] ?? '',
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
+        return Column(
+          children: [
+            _buildSearchBar(),
+            _buildCategoryFilters(homeProvider),
+            Expanded(
+              child: _buildProductList(homeProvider),
+            ),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: EdgeInsets.all(16.w),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: 'Search products...',
+          prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30.r),
+            borderSide: BorderSide.none,
+          ),
+          filled: true,
+          fillColor: Colors.grey[200],
+        ),
+        onChanged: (value) {
+          setState(() {
+            _searchQuery = value.toLowerCase();
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildCategoryFilters(HomePrivder homeProvider) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildDropdown(
+              value: homeProvider.category,
+              items: homeProvider.categorySubcategoryMap.keys.toList(),
+              onChanged: (String? newValue) {
+                homeProvider.setCategory(newValue);
+              },
+              hint: 'Select Category',
+            ),
+          ),
+          SizedBox(width: 16.w),
+          Expanded(
+            child: _buildDropdown(
+              value: homeProvider.subCategory,
+              items:
+                  homeProvider.categorySubcategoryMap[homeProvider.category] ??
+                      [],
+              onChanged: (String? newValue) {
+                homeProvider.setSubCategory(newValue);
+              },
+              hint: 'Select Subcategory',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String? value,
+    required List<String> items,
+    required void Function(String?) onChanged,
+    required String hint,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          hint: Text(hint, style: TextStyle(fontSize: 14.sp)),
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, style: TextStyle(fontSize: 14.sp)),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          isExpanded: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductList(HomePrivder homeProvider) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Implement refresh logic
+      },
+      child: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('products')
+            .where('category', isEqualTo: homeProvider.category)
+            .where('subCategory', isEqualTo: homeProvider.subCategory)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+                child: Text('Something went wrong',
+                    style: TextStyle(fontSize: 16.sp)));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.data!.docs.isEmpty) {
+            return Center(
+                child: Text('No products found',
+                    style: TextStyle(fontSize: 16.sp)));
+          }
+
+          List<DocumentSnapshot> filteredDocs = snapshot.data!.docs
+              .where((doc) =>
+                  doc['title'].toString().toLowerCase().contains(_searchQuery))
+              .toList();
+
+          return GridView.builder(
+            controller: _scrollController,
+            padding: EdgeInsets.all(16.w),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 16.w,
+              mainAxisSpacing: 16.w,
+            ),
+            itemCount: filteredDocs.length,
+            itemBuilder: (context, index) {
+              DocumentSnapshot document = filteredDocs[index];
+              Map<String, dynamic> data =
+                  document.data()! as Map<String, dynamic>;
+
+              return ProductCard(
+                id: data['id'] ?? '',
+                title: data['title'] ?? 'No Title',
+                price: (data['price'] as num?)?.toDouble() ?? 0,
+                imageUrls: List<String>.from(data['imageUrls'] ?? []),
+                category: data['category'] ?? 'No Category',
+                subCategory: data['subCategory'] ?? 'No Subcategory',
+                phoneNumber: data['phoneNumber'] ?? '',
+                description: data['description'] ?? '',
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -232,50 +252,83 @@ class ProductCard extends StatelessWidget {
       },
       child: Card(
         elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.r)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(15)),
-                child: Image.network(
-                  imageUrls.isNotEmpty
-                      ? imageUrls[0]
-                      : 'https://placeholder.com/300',
-                  fit: BoxFit.cover,
-                  width: double.infinity,
-                ),
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(15.r)),
+                    child: imageUrls.isNotEmpty
+                        ? CarouselSlider(
+                            options: CarouselOptions(
+                              aspectRatio: 1,
+                              viewportFraction: 1,
+                              autoPlay: false,
+                              autoPlayInterval: const Duration(seconds: 3),
+                            ),
+                            items: imageUrls.map((url) {
+                              return Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              );
+                            }).toList(),
+                          )
+                        : Image.network(
+                            'https://placeholder.com/300',
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                          ),
+                  ),
+                  Positioned(
+                    top: 8.h,
+                    right: 8.w,
+                    child: Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Text(
+                        '\$${price.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: EdgeInsets.all(12.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '\$${price.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                          color: Theme.of(context).primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.h),
                   Text(
                     '$category - $subCategory',
-                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: Colors.grey[600],
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

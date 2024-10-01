@@ -1,14 +1,14 @@
+import 'package:fine_rock/core/models/user_model.dart';
 import 'package:fine_rock/presentation/favorite/favorite_screen.dart';
 import 'package:fine_rock/presentation/screens/buyer/add_product/add_product.dart';
 import 'package:fine_rock/presentation/screens/buyer/buyer.dart';
 import 'package:fine_rock/presentation/screens/home/home_privder.dart';
 import 'package:fine_rock/presentation/screens/seller/seller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
-
 import '../../edit_profile/edit_profile_screen.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -22,133 +22,150 @@ class HomeScreen extends StatelessWidget {
       create: (context) => HomePrivder(),
       child: Consumer<HomePrivder>(
         builder: (context, provider, child) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Home'),
-            actions: [
-              PopupMenuButton<Role>(
-                initialValue: provider.selectedRole,
-                onSelected: (Role role) {
-                  provider.setRole(role);
-                },
-                itemBuilder: (context) => [
-                  PopupMenuItem<Role>(
-                    value: Role.buyer,
-                    child: Row(
-                      children: [
-                        const Text('Buyer'),
-                        const Spacer(),
-                        if (provider.selectedRole == Role.buyer)
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: const BoxDecoration(
-                                shape: BoxShape.circle, color: Colors.white),
-                            child: Container(
-                              margin: const EdgeInsets.all(2),
-                              width: 15,
-                              height: 15,
-                              decoration: const BoxDecoration(
-                                  shape: BoxShape.circle, color: Colors.blue),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem<Role>(
-                    value: Role.seller,
-                    child: Row(
-                      children: [
-                        const Text('Seller'),
-                        const Spacer(),
-                        if (provider.selectedRole == Role.seller)
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: const BoxDecoration(
-                                shape: BoxShape.circle, color: Colors.white),
-                            child: Container(
-                              margin: const EdgeInsets.all(2),
-                              width: 15,
-                              height: 15,
-                              decoration: const BoxDecoration(
-                                  shape: BoxShape.circle, color: Colors.blue),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-          drawer: Drawer(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                UserAccountsDrawerHeader(
-                  accountName: Text(user?.fullName ?? 'User'),
-                  accountEmail: Text(user?.email ?? ''),
-                  currentAccountPicture: CircleAvatar(
-                    backgroundImage: user?.profileImageUrl != null
-                        ? NetworkImage(user!.profileImageUrl!)
-                        : const AssetImage('assets/default_profile.png')
-                            as ImageProvider,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                  ),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.edit),
-                  title: const Text('Edit Profile'),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const EditProfileScreen()),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.favorite),
-                  title: const Text('Favorite'),
-                  onTap: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const FavoritesScreen()));
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.exit_to_app),
-                  title: const Text('Logout'),
-                  onTap: () {
-                    authProvider.logout();
-                  },
-                ),
-              ],
-            ),
-          ),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (provider.selectedRole == Role.buyer) const BuyerScreen(),
-              if (provider.selectedRole == Role.seller) const SellerScreen(),
-            ],
-          ),
-          floatingActionButton: provider.selectedRole == Role.seller
-              ? FloatingActionButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const AddProductScreen()));
-                  },
-                  child: const Icon(Icons.add),
-                )
-              : null,
+          appBar: _buildAppBar(context, provider),
+          drawer: _buildDrawer(context, user, authProvider),
+          body: _buildBody(provider),
+          floatingActionButton: _buildFloatingActionButton(context, provider),
         ),
       ),
     );
+  }
+
+  PreferredSizeWidget _buildAppBar(BuildContext context, HomePrivder provider) {
+    return AppBar(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).primaryColor,
+              Theme.of(context).primaryColorLight
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      title: Text('Fine Rock',
+          style: TextStyle(fontSize: 24.sp, fontWeight: FontWeight.bold)),
+      actions: [
+        _buildRoleToggle(provider, context),
+      ],
+    );
+  }
+
+  Widget _buildRoleToggle(HomePrivder provider, context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      child: DropdownButton<Role>(
+        value: provider.selectedRole,
+        icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+        iconSize: 24,
+        elevation: 16,
+        style: TextStyle(color: Colors.white, fontSize: 16.sp),
+        underline: Container(height: 2, color: Colors.white),
+        onChanged: (Role? newValue) {
+          provider.setRole(newValue!);
+        },
+        items: Role.values.map<DropdownMenuItem<Role>>((Role value) {
+          return DropdownMenuItem<Role>(
+            value: value,
+            child: Text(value.toString().split('.').last.toUpperCase()),
+          );
+        }).toList(),
+        dropdownColor: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildDrawer(
+      BuildContext context, UserModel? user, AuthController authProvider) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          UserAccountsDrawerHeader(
+            accountName: Text(user?.fullName ?? 'User',
+                style: TextStyle(fontSize: 18.sp)),
+            accountEmail:
+                Text(user?.email ?? '', style: TextStyle(fontSize: 14.sp)),
+            currentAccountPicture: CircleAvatar(
+              backgroundImage: user?.profileImageUrl != null
+                  ? NetworkImage(user!.profileImageUrl!)
+                  : const AssetImage('assets/default_profile.png')
+                      as ImageProvider,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Theme.of(context).primaryColor,
+                  Theme.of(context).primaryColorLight
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+          ),
+          _buildDrawerItem(
+            icon: Icons.edit,
+            title: 'Edit Profile',
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const EditProfileScreen())),
+          ),
+          _buildDrawerItem(
+            icon: Icons.favorite,
+            title: 'Favorite',
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const FavoritesScreen())),
+          ),
+          _buildDrawerItem(
+            icon: Icons.exit_to_app,
+            title: 'Logout',
+            onTap: () => authProvider.logout(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+      {required IconData icon,
+      required String title,
+      required VoidCallback onTap}) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.grey[600]),
+      title: Text(title, style: TextStyle(fontSize: 16.sp)),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildBody(HomePrivder provider) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: provider.selectedRole == Role.buyer
+          ? const BuyerScreen()
+          : const SellerScreen(),
+    );
+  }
+
+  Widget? _buildFloatingActionButton(
+      BuildContext context, HomePrivder provider) {
+    return provider.selectedRole == Role.seller
+        ? FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AddProductScreen()));
+            },
+            backgroundColor: Theme.of(context).primaryColor,
+            child: const Icon(Icons.add),
+          )
+        : null;
   }
 }

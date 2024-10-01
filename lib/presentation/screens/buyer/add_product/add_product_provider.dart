@@ -92,11 +92,11 @@ class AddProductProvider extends ChangeNotifier {
   Future<void> addProduct() async {
     isLoading = true;
     notifyListeners();
-    if (images.isEmpty) {
-      print('Error: No images selected');
+
+    if (!_validateInputs()) {
       isLoading = false;
       notifyListeners();
-      return;
+      throw Exception('Please fill all required fields');
     }
 
     try {
@@ -110,11 +110,15 @@ class AddProductProvider extends ChangeNotifier {
 
       // Upload all images
       for (var image in images) {
-        String fileName = path.basename(image.path);
+        String fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${path.basename(image.path)}';
         Reference ref = _storage.ref().child('product_images/$fileName');
-        await ref.putFile(image);
-        String imageUrl = await ref.getDownloadURL();
-        imageUrls.add(imageUrl);
+        UploadTask uploadTask = ref.putFile(image);
+
+        await uploadTask.whenComplete(() async {
+          String imageUrl = await ref.getDownloadURL();
+          imageUrls.add(imageUrl);
+        });
       }
 
       // Add product to Firestore
@@ -133,16 +137,29 @@ class AddProductProvider extends ChangeNotifier {
         'phoneNumber': _authController.userModel!.phoneNumber,
       });
 
+      log('Product added successfully');
       clearForm();
-      notifyListeners();
     } catch (e) {
-      print('Error adding product: $e');
-      // You might want to show an error message to the user here
-      rethrow; // Rethrow the error so it can be caught and handled in the UI
+      log('Error adding product: $e');
+      rethrow;
     } finally {
       isLoading = false;
       notifyListeners();
     }
+  }
+
+  bool _validateInputs() {
+    if (titleController.text.isEmpty ||
+        priceController.text.isEmpty ||
+        descController.text.isEmpty ||
+        sizeController.text.isEmpty ||
+        colorController.text.isEmpty ||
+        selectedCategory == null ||
+        selectedSubCategory == null ||
+        images.isEmpty) {
+      return false;
+    }
+    return true;
   }
 
   void clearForm() {
