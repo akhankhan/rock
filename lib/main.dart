@@ -7,15 +7,26 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'presentation/cart/cart_provider.dart'; // Add this import
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize CartProvider
+  final cartProvider = CartProvider();
+  await cartProvider.initialize();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AuthController(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => AuthController()),
+        ChangeNotifierProvider(create: (context) => cartProvider),
+      ],
       child: const MyApp(),
     ),
   );
@@ -58,10 +69,11 @@ class AuthWrapper extends StatelessWidget {
           if (user == null) {
             return const AuthScreen();
           } else {
+            // When user is authenticated, ensure cart is initialized
+            Provider.of<CartProvider>(context, listen: false).initialize();
             return const HomeScreen();
           }
         }
-        // Show a loading screen while waiting for the authentication state
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         );

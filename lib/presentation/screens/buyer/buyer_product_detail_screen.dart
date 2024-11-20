@@ -1,9 +1,13 @@
-import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:fine_rock/core/utils/whatsapp_launcher.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:carousel_slider/carousel_slider.dart' as carousel;
+
+import '../../cart/cart_provider.dart';
+import '../../cart/cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String id;
@@ -36,36 +40,46 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _currentImageIndex = 0;
   bool _isFavorite = false;
-  late carousel.CarouselController _carouselController;
+  bool _isLoading = true;
+  late SharedPreferences _prefs;
 
   @override
   void initState() {
     super.initState();
-    _carouselController = carousel.CarouselController();
-    _checkFavoriteStatus();
+    _initializePreferences();
   }
 
-  Future<void> _checkFavoriteStatus_loadFavoriteStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isFavorite = prefs.getBool('favorite_${widget.id}') ?? false;
-    });
-  }
-
-  Future<void> _checkFavoriteStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isFavorite = prefs.getBool('favorite_${widget.id}') ?? false;
-    });
+  Future<void> _initializePreferences() async {
+    _prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _isFavorite = _prefs.getBool('favorite_${widget.id}') ?? false;
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _toggleFavorite() async {
-    final prefs = await SharedPreferences.getInstance();
+    if (_isLoading) return;
+
+    final newState = !_isFavorite;
     setState(() {
-      _isFavorite = !_isFavorite;
+      _isFavorite = newState;
     });
-    await prefs.setBool('favorite_${widget.id}', _isFavorite);
-    widget.onFavoriteChanged?.call(_isFavorite);
+
+    try {
+      await _prefs.setBool('favorite_${widget.id}', newState);
+      widget.onFavoriteChanged?.call(newState);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isFavorite = !newState;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update favorite status')),
+        );
+      }
+    }
   }
 
   @override
@@ -78,6 +92,47 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             icon: Icon(_isFavorite ? Icons.favorite : Icons.favorite_border),
             onPressed: _toggleFavorite,
           ),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => const CartScreen()),
+                  );
+                },
+              ),
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Consumer<CartProvider>(
+                  builder: (context, cart, child) {
+                    return cart.itemCount > 0
+                        ? Container(
+                            padding: EdgeInsets.all(4.w),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                            constraints: BoxConstraints(
+                              minWidth: 16.w,
+                              minHeight: 16.w,
+                            ),
+                            child: Text(
+                              '${cart.itemCount}',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.sp,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          )
+                        : const SizedBox();
+                  },
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -87,27 +142,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Stack(
               alignment: Alignment.bottomCenter,
               children: [
-                CarouselSlider(
-                  carouselController: _carouselController,
-                  options: CarouselOptions(
-                    height: 300.0,
-                    viewportFraction: 1.0,
-                    enlargeCenterPage: false,
-                    enableInfiniteScroll: widget.imageUrls.length > 1,
-                    autoPlay: widget.imageUrls.length > 1,
-                    onPageChanged: (index, reason) {
-                      setState(() {
-                        _currentImageIndex = index;
-                      });
-                    },
-                  ),
-                  items: widget.imageUrls.map((url) {
+                ImageSlideshow(
+                  width: double.infinity,
+                  height: 300,
+                  initialPage: 0,
+                  indicatorColor: Colors.white,
+                  indicatorBackgroundColor: Colors.white.withOpacity(0.4),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentImageIndex = index;
+                    });
+                  },
+                  autoPlayInterval: widget.imageUrls.length > 1 ? 3000 : 0,
+                  isLoop: widget.imageUrls.length > 1,
+                  children: widget.imageUrls.map((url) {
                     return Builder(
                       builder: (BuildContext context) {
                         return Image.network(
                           url,
                           fit: BoxFit.cover,
-                          width: double.infinity,
                         );
                       },
                     );
@@ -118,34 +171,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        '${_currentImageIndex + 1}/${widget.imageUrls.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          backgroundColor: Colors.black54,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      Row(
-                        children: widget.imageUrls.asMap().entries.map((entry) {
-                          return GestureDetector(
-                            onTap: () =>
-                                _carouselController.animateToPage(entry.key),
-                            child: Container(
-                              width: 8.0,
-                              height: 8.0,
-                              margin:
-                                  const EdgeInsets.symmetric(horizontal: 4.0),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(
-                                  _currentImageIndex == entry.key ? 0.9 : 0.4,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
+                        child: Text(
+                          '${_currentImageIndex + 1}/${widget.imageUrls.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -231,9 +271,24 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Implement add to cart functionality
+          final cart = Provider.of<CartProvider>(context, listen: false);
+          cart.addItem(
+            productId: widget.id,
+            title: widget.title,
+            price: widget.price,
+            imageUrl: widget.imageUrls.first,
+          );
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Added to cart')),
+            SnackBar(
+              content: const Text('Added to cart'),
+              duration: const Duration(seconds: 2),
+              action: SnackBarAction(
+                label: 'UNDO',
+                onPressed: () {
+                  cart.removeItem(widget.id);
+                },
+              ),
+            ),
           );
         },
         label: const Text('Add to Cart'),

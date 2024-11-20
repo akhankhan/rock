@@ -2,7 +2,7 @@ import 'package:fine_rock/core/models/user_model.dart';
 import 'package:fine_rock/presentation/favorite/favorite_screen.dart';
 import 'package:fine_rock/presentation/screens/buyer/add_product/add_product.dart';
 import 'package:fine_rock/presentation/screens/buyer/buyer.dart';
-import 'package:fine_rock/presentation/screens/home/home_privder.dart';
+import 'package:fine_rock/presentation/screens/home/home_provider.dart';
 import 'package:fine_rock/presentation/screens/seller/seller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +19,8 @@ class HomeScreen extends StatelessWidget {
     final user = authProvider.userModel;
 
     return ChangeNotifierProvider(
-      create: (context) => HomePrivder(),
-      child: Consumer<HomePrivder>(
+      create: (context) => HomeProvider(),
+      child: Consumer<HomeProvider>(
         builder: (context, provider, child) => Scaffold(
           appBar: _buildAppBar(context, provider),
           drawer: _buildDrawer(context, user, authProvider),
@@ -31,7 +31,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, HomePrivder provider) {
+  PreferredSizeWidget _buildAppBar(
+      BuildContext context, HomeProvider provider) {
     return AppBar(
       elevation: 0,
       backgroundColor: Colors.transparent,
@@ -55,7 +56,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRoleToggle(HomePrivder provider, context) {
+  Widget _buildRoleToggle(HomeProvider provider, context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: DropdownButton<Role>(
@@ -144,7 +145,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody(HomePrivder provider) {
+  Widget _buildBody(HomeProvider provider) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       child: provider.selectedRole == Role.buyer
@@ -154,7 +155,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget? _buildFloatingActionButton(
-      BuildContext context, HomePrivder provider) {
+      BuildContext context, HomeProvider provider) {
     return provider.selectedRole == Role.seller
         ? FloatingActionButton(
             onPressed: () {

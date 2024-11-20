@@ -16,7 +16,7 @@ class AuthController with ChangeNotifier {
   AuthController() {
     _auth.authStateChanges().listen((User? user) {
       if (user != null) {
-        _loadUserData(user.uid);
+        _loadUserData(user.uid); // This is async
       } else {
         _userModel = null;
       }

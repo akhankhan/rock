@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 enum Role { buyer, seller }
 
-class HomePrivder extends ChangeNotifier {
+class HomeProvider extends ChangeNotifier {
   Role? selectedRole = Role.buyer;
   String? category;
   String? subCategory;
@@ -13,7 +13,7 @@ class HomePrivder extends ChangeNotifier {
     "Matrix": ["Precious Stone", "Semi Precious Stone"]
   };
 
-  HomePrivder() {
+  HomeProvider() {
     category = categorySubcategoryMap.keys.first;
     subCategory = categorySubcategoryMap[category]!.first;
   }

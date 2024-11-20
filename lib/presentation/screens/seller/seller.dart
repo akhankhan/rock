@@ -1,9 +1,11 @@
-import 'package:carousel_slider/carousel_slider.dart';
+import 'dart:developer';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:fine_rock/presentation/screens/home/home_privder.dart';
+import 'package:fine_rock/presentation/screens/home/home_provider.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import 'edit_product_screen.dart';
 
@@ -40,7 +42,7 @@ class _SellerScreenState extends State<SellerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomePrivder>(
+    return Consumer<HomeProvider>(
       builder: (context, homeProvider, child) {
         return Column(
           children: [
@@ -78,7 +80,7 @@ class _SellerScreenState extends State<SellerScreen> {
     );
   }
 
-  Widget _buildCategoryFilters(HomePrivder homeProvider) {
+  Widget _buildCategoryFilters(HomeProvider homeProvider) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
@@ -140,9 +142,17 @@ class _SellerScreenState extends State<SellerScreen> {
     );
   }
 
-  Widget _buildProductList(HomePrivder homeProvider) {
+  Widget _buildProductList(HomeProvider homeProvider) {
     final authProvider = Provider.of<AuthController>(context, listen: false);
     final user = authProvider.userModel;
+    log("UUUU KK $user");
+
+    if (user == null) {
+      return Center(
+        child: Text('Please log in to view your products',
+            style: TextStyle(fontSize: 16.sp)),
+      );
+    }
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -151,7 +161,7 @@ class _SellerScreenState extends State<SellerScreen> {
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('products')
-            .where('userId', isEqualTo: user?.id)
+            .where('userId', isEqualTo: user.id)
             .where('category', isEqualTo: homeProvider.category)
             .where('subCategory', isEqualTo: homeProvider.subCategory)
             .snapshots(),
@@ -289,18 +299,19 @@ class SellerProductCard extends StatelessWidget {
                     borderRadius:
                         BorderRadius.vertical(top: Radius.circular(15.r)),
                     child: imageUrls.isNotEmpty
-                        ? CarouselSlider(
-                            options: CarouselOptions(
-                              aspectRatio: 1,
-                              viewportFraction: 1,
-                              autoPlay: false,
-                              autoPlayInterval: const Duration(seconds: 3),
-                            ),
-                            items: imageUrls.map((url) {
+                        ? ImageSlideshow(
+                            width: double.infinity,
+                            height: double.infinity,
+                            initialPage: 0,
+                            indicatorColor: Colors.white,
+                            indicatorBackgroundColor:
+                                Colors.white.withOpacity(0.4),
+                            autoPlayInterval: 0, // Disable autoplay
+                            isLoop: true,
+                            children: imageUrls.map((url) {
                               return Image.network(
                                 url,
                                 fit: BoxFit.cover,
-                                width: double.infinity,
                               );
                             }).toList(),
                           )

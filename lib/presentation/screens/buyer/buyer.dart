@@ -1,12 +1,10 @@
-import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:fine_rock/core/utils/whatsapp_launcher.dart';
 import 'package:fine_rock/presentation/screens/buyer/buyer_product_detail_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:fine_rock/presentation/screens/home/home_privder.dart';
+import 'package:fine_rock/presentation/screens/home/home_provider.dart';
 
 class BuyerScreen extends StatefulWidget {
   const BuyerScreen({super.key});
@@ -42,7 +40,7 @@ class _BuyerScreenState extends State<BuyerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomePrivder>(
+    return Consumer<HomeProvider>(
       builder: (context, homeProvider, child) {
         return Column(
           children: [
@@ -80,7 +78,7 @@ class _BuyerScreenState extends State<BuyerScreen> {
     );
   }
 
-  Widget _buildCategoryFilters(HomePrivder homeProvider) {
+  Widget _buildCategoryFilters(HomeProvider homeProvider) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.w),
       child: Row(
@@ -142,7 +140,7 @@ class _BuyerScreenState extends State<BuyerScreen> {
     );
   }
 
-  Widget _buildProductList(HomePrivder homeProvider) {
+  Widget _buildProductList(HomeProvider homeProvider) {
     return RefreshIndicator(
       onRefresh: () async {
         // Implement refresh logic
@@ -264,18 +262,19 @@ class ProductCard extends StatelessWidget {
                     borderRadius:
                         BorderRadius.vertical(top: Radius.circular(15.r)),
                     child: imageUrls.isNotEmpty
-                        ? CarouselSlider(
-                            options: CarouselOptions(
-                              aspectRatio: 1,
-                              viewportFraction: 1,
-                              autoPlay: false,
-                              autoPlayInterval: const Duration(seconds: 3),
-                            ),
-                            items: imageUrls.map((url) {
+                        ? ImageSlideshow(
+                            width: double.infinity,
+                            height: double.infinity,
+                            initialPage: 0,
+                            indicatorColor: Colors.white,
+                            indicatorBackgroundColor:
+                                Colors.white.withOpacity(0.4),
+                            autoPlayInterval: 0, // Disable autoplay
+                            isLoop: true,
+                            children: imageUrls.map((url) {
                               return Image.network(
                                 url,
                                 fit: BoxFit.cover,
-                                width: double.infinity,
                               );
                             }).toList(),
                           )
