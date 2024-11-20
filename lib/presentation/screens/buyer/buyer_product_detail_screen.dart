@@ -3,6 +3,7 @@ import 'package:fine_rock/core/utils/whatsapp_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:carousel_slider/carousel_slider.dart' as carousel;
 
 class ProductDetailScreen extends StatefulWidget {
   final String id;
@@ -35,12 +36,12 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _currentImageIndex = 0;
   bool _isFavorite = false;
-  late CarouselController _carouselController;
+  late carousel.CarouselController _carouselController;
 
   @override
   void initState() {
     super.initState();
-    _carouselController = CarouselController();
+    _carouselController = carousel.CarouselController();
     _checkFavoriteStatus();
   }
 
