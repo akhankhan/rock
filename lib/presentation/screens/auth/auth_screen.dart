@@ -19,7 +19,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
-  final String _selectedRole = 'Buyer';
+  String _selectedRole = 'Buyer';
   bool _obscurePassword = true;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -97,6 +97,60 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRoleSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Select Role',
+          style: TextStyle(
+            color: const Color(0xFF1E3C72).withOpacity(0.7),
+            fontSize: 14.sp,
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: const Color(0xFF1E3C72).withOpacity(0.5),
+            ),
+            borderRadius: BorderRadius.circular(12.r),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text('Buyer'),
+                  value: 'buyer',
+                  groupValue: _selectedRole.toLowerCase(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value!;
+                    });
+                  },
+                  activeColor: const Color(0xFF1E3C72),
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<String>(
+                  title: const Text('Seller'),
+                  value: 'seller',
+                  groupValue: _selectedRole.toLowerCase(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedRole = value!;
+                    });
+                  },
+                  activeColor: const Color(0xFF1E3C72),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -195,7 +249,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   SizedBox(height: 16.h),
                   _buildPasswordField(),
                   SizedBox(height: 24.h),
-                  _buildAuthButton(authProvider),
+                  _buildRoleSelector(),
+                  SizedBox(height: 24.h),
+                  if (_isLogin) _buildAuthButton(authProvider),
                   if (_isLogin) ...[
                     SizedBox(height: 16.h),
                     _buildForgotPasswordButton(),
@@ -362,8 +418,12 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                   try {
                     if (_isLogin) {
                       await authProvider.login(
-                        _emailController.text,
-                        _passwordController.text,
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                        role: _selectedRole,
+                        context: context,
+                        
+
                       );
                     } else {
                       await authProvider.signUp(

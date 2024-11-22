@@ -1,8 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fine_rock/core/models/user_model.dart';
+import 'package:fine_rock/presentation/screens/home/home_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fine_rock/presentation/screens/home/home_screen.dart';
+import 'package:fine_rock/presentation/screens/seller/seller_screen.dart';
+import 'package:provider/provider.dart';
+
+import '../home/home_provider.dart';
 
 class AuthController with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -10,6 +16,9 @@ class AuthController with ChangeNotifier {
   bool isLoading = false;
   UserModel? _userModel;
   String phoneNumber = '';
+  String? userRole;
+  bool isAuthenticated = false;
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   UserModel? get userModel => _userModel;
 
@@ -76,7 +85,12 @@ class AuthController with ChangeNotifier {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login({
+    required String email,
+    required String password,
+    required String role,
+    required BuildContext context,
+  }) async {
     try {
       final UserCredential userCredential =
           await _auth.signInWithEmailAndPassword(
@@ -84,11 +98,22 @@ class AuthController with ChangeNotifier {
         password: password,
       );
       await _loadUserData(userCredential.user!.uid);
+      userRole = role;
+      isAuthenticated = true;
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      if (role == "Buyer") {
+        homeProvider.setRole(Role.buyer);
+      } else if (role == "Seller") {
+        homeProvider.setRole(Role.seller);
+      } else {
+        throw Exception('Invalid role: $role');
+      }
+      notifyListeners();
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}'); // Debug log
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
     } catch (e) {
-      print('Unexpected error: $e'); // Debug log
+      print('Unexpected error: $e');
       throw Exception('An unexpected error occurred. Please try again.');
     }
   }
@@ -118,10 +143,10 @@ class AuthController with ChangeNotifier {
     try {
       await _auth.sendPasswordResetEmail(email: email);
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException: ${e.code} - ${e.message}'); // Debug log
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
     } catch (e) {
-      print('Unexpected error: $e'); // Debug log
+      print('Unexpected error: $e');
       throw Exception('An unexpected error occurred. Please try again.');
     }
   }

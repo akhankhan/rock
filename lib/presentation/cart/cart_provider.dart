@@ -1,13 +1,19 @@
 import 'dart:convert';
 
 import 'package:fine_rock/core/models/item_model.dart';
+import 'package:fine_rock/core/utils/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/models/order_model.dart';
+import '../../core/services/stripe_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CartProvider with ChangeNotifier {
   Map<String, CartItem> _items = {};
   late SharedPreferences _prefs;
   bool _isInitialized = false;
+  bool _isProcessing = false;
 
   Map<String, CartItem> get items => {..._items};
 
@@ -20,6 +26,8 @@ class CartProvider with ChangeNotifier {
     });
     return total;
   }
+
+  bool get isProcessing => _isProcessing;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -90,5 +98,48 @@ class CartProvider with ChangeNotifier {
     _items = {};
     notifyListeners();
     await saveCartToPrefs();
+  }
+
+  Future<void> processPayment() async {
+    try {
+      _isProcessing = true;
+      notifyListeners();
+
+      final amount = (totalAmount * 100).toInt().toString();
+      await StripeService.makePayment(
+        amount: amount,
+        currency: 'USD',
+      );
+
+      await _saveOrder();
+
+      await clear();
+    } catch (e) {
+      AppLogger.log('Payment failed: $e');
+      rethrow;
+    } finally {
+      _isProcessing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _saveOrder() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    final orderId = FirebaseFirestore.instance.collection('orders').doc().id;
+
+    final order = OrderModel(
+      id: orderId,
+      amount: totalAmount,
+      items: _items.values.toList(),
+      date: DateTime.now(),
+      status: 'Completed',
+    );
+
+    await FirebaseFirestore.instance.collection('orders').doc(orderId).set({
+      ...order.toMap(),
+      'userId': userId,
+    });
   }
 }

@@ -1,31 +1,31 @@
 import 'package:fine_rock/firebase_options.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_screen.dart';
+import 'package:fine_rock/presentation/screens/home/home_provider.dart';
 import 'package:fine_rock/presentation/screens/home/home_screen.dart';
+import 'package:fine_rock/presentation/screens/seller/seller_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'presentation/cart/cart_provider.dart'; // Add this import
+import 'core/services/stripe_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await StripeService.initialize();
 
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Initialize CartProvider
-  final cartProvider = CartProvider();
-  await cartProvider.initialize();
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthController()),
-        ChangeNotifierProvider(create: (context) => cartProvider),
+        ChangeNotifierProvider(create: (context) => CartProvider()),
+        ChangeNotifierProvider(create: (context) => HomeProvider()),
       ],
       child: const MyApp(),
     ),
@@ -48,7 +48,19 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
-        home: const AuthWrapper(),
+        home: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final authController = context.read<AuthController>();
+              if (authController.userRole == 'seller') {
+                return const SellerScreen();
+              }
+              return const HomeScreen();
+            }
+            return const AuthScreen();
+          },
+        ),
       ),
     );
   }
@@ -68,11 +80,8 @@ class AuthWrapper extends StatelessWidget {
           final User? user = snapshot.data;
           if (user == null) {
             return const AuthScreen();
-          } else {
-            // When user is authenticated, ensure cart is initialized
-            Provider.of<CartProvider>(context, listen: false).initialize();
-            return const HomeScreen();
           }
+          return const HomeScreen();
         }
         return const Scaffold(
           body: Center(child: CircularProgressIndicator()),

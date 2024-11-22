@@ -182,26 +182,53 @@ class CartScreen extends StatelessWidget {
                       SizedBox(height: 16.h),
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Implement checkout logic
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content:
-                                    Text('Checkout functionality coming soon!'),
+                        child: Consumer<CartProvider>(
+                          builder: (context, cartProvider, child) {
+                            return ElevatedButton(
+                              onPressed: cartProvider.isProcessing
+                                  ? null  // Disable button while processing
+                                  : () async {
+                                      try {
+                                        await cartProvider.processPayment();
+                                        
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Payment Successful!'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Payment Failed: ${e.toString()}'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    },
+                              style: ElevatedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 16.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
                               ),
+                              child: cartProvider.isProcessing
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                      ),
+                                    )
+                                  : Text(
+                                      'Pay with Stripe',
+                                      style: TextStyle(fontSize: 16.sp),
+                                    ),
                             );
                           },
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(vertical: 16.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                          ),
-                          child: Text(
-                            'Checkout',
-                            style: TextStyle(fontSize: 16.sp),
-                          ),
                         ),
                       ),
                     ],

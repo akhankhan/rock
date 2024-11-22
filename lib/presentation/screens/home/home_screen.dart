@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:fine_rock/presentation/screens/auth/auth_controller.dart';
 import '../../edit_profile/edit_profile_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:fine_rock/presentation/screens/orders/orders_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,15 +19,12 @@ class HomeScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthController>(context);
     final user = authProvider.userModel;
 
-    return ChangeNotifierProvider(
-      create: (context) => HomeProvider(),
-      child: Consumer<HomeProvider>(
-        builder: (context, provider, child) => Scaffold(
-          appBar: _buildAppBar(context, provider),
-          drawer: _buildDrawer(context, user, authProvider),
-          body: _buildBody(provider),
-          floatingActionButton: _buildFloatingActionButton(context, provider),
-        ),
+    return Consumer<HomeProvider>(
+      builder: (context, provider, child) => Scaffold(
+        appBar: _buildAppBar(context, provider),
+        drawer: _buildDrawer(context, user, authProvider),
+        body: _buildBody(provider),
+        floatingActionButton: _buildFloatingActionButton(context, provider),
       ),
     );
   }
@@ -123,6 +121,16 @@ class HomeScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const FavoritesScreen())),
+          ),
+          ListTile(
+            leading: const Icon(Icons.shopping_bag_outlined),
+            title: const Text('My Orders'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const OrdersScreen()),
+              );
+            },
           ),
           _buildDrawerItem(
             icon: Icons.exit_to_app,
