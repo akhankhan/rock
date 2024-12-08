@@ -4,11 +4,8 @@ import 'package:fine_rock/presentation/screens/home/home_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:fine_rock/presentation/screens/home/home_screen.dart';
-import 'package:fine_rock/presentation/screens/seller/seller_screen.dart';
 import 'package:provider/provider.dart';
 
-import '../home/home_provider.dart';
 
 class AuthController with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -180,6 +177,10 @@ class AuthController with ChangeNotifier {
     print("$message: $error");
     throw CustomAuthException(
         'An unexpected error occurred. Please try again.');
+  }
+
+  void check() {
+    
   }
 }
 
