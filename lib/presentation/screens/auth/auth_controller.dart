@@ -180,7 +180,7 @@ class AuthController with ChangeNotifier {
   }
 
   void check() {
-    
+    log("user");
   }
 }
 
