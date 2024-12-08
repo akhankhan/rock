@@ -180,9 +180,6 @@ class AuthController with ChangeNotifier {
         'An unexpected error occurred. Please try again.');
   }
 
-  void check() {
-    log("user");
-  }
 }
 
 class CustomAuthException implements Exception {
